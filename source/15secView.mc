@@ -15,13 +15,14 @@ class _15secView extends WatchUi.View {
     // Per arc: start angle, seconds offset, bright color, dim color.
     private const ARC_STARTS = [0, 120, 240];
     private const ARC_OFFSETS = [0, 5, 10];
-    private const ARC_COLORS = [0xFF0000, 0x00FF22, 0x00CCFF];
-    private const ARC_DIM_COLORS = [0x660000, 0x006611, 0x005566];
+    private const ARC_COLORS = [0xFF8800, 0x00FF22, 0x00CCFF];
+    private const ARC_DIM_COLORS = [0x663600, 0x006611, 0x005566];
 
     // Seconds hand, leading dot first: each trailing dot sits TRAIL_STEP
     // degrees further back (one second), dimmer and smaller.
     private const TRAIL_STEP = 6;
     private const HAND_COLORS = [0xFFFFFF, 0xAAAAAA, 0x666666];
+    private const TICK_COLOR = 0x555555;
     private const HAND_SIZES = [0.014, 0.011, 0.008];
 
     private var _timer as Timer.Timer?;
@@ -106,25 +107,27 @@ class _15secView extends WatchUi.View {
             drawWatchArc(dc, cx, cy, radius, start, start + fillSeconds(clock.sec, ARC_OFFSETS[i] as Number) * DEG_PER_SEC);
         }
 
-        // Seconds ring: a tick every 5 s, run over by a three-dot white hand
-        // whose trail fades out behind the leading dot. Each tick takes the
-        // color of the arc that completes its cycle on that second
-        // (:00 red, :05 green, :10 blue, :15 red ...), so four of each.
+        // Seconds ring: a gray tick every 5 s, run over by a three-dot white
+        // hand whose trail fades out behind the leading dot. The tick the hand
+        // is heading to is drawn big, in the color of the arc that completes
+        // on that second and starts a new cycle right after (:00 red, :05 green,
+        // :10 blue, :15 red ...); the time below uses the same color.
         var ring = dotRingRadius(w);
+        var nextTick = (clock.sec + 4) / 5;
+        var nextColor = ARC_COLORS[nextTick % 3] as Number;
+        dc.setColor(TICK_COLOR, Graphics.COLOR_TRANSPARENT);
         for (var k = 0; k < 12; k++) {
-            dc.setColor(ARC_COLORS[k % 3] as Number, Graphics.COLOR_TRANSPARENT);
             drawRingDot(dc, cx, cy, ring, k * 5 * DEG_PER_SEC, w * 0.007);
         }
+        dc.setColor(nextColor, Graphics.COLOR_TRANSPARENT);
+        drawRingDot(dc, cx, cy, ring, nextTick * 5 * DEG_PER_SEC, w * (HAND_SIZES[0] as Float) * 2);
         // Draw back to front so the leading dot ends up on top.
         for (var i = 2; i >= 0; i--) {
             dc.setColor(HAND_COLORS[i] as Number, Graphics.COLOR_TRANSPARENT);
             drawRingDot(dc, cx, cy, ring, clock.sec * DEG_PER_SEC - i * TRAIL_STEP, w * (HAND_SIZES[i] as Float));
         }
 
-        // The time takes the color of the tick the hand is heading to, i.e. the
-        // arc that completes next and starts a new cycle right after.
-        var nextTick = (clock.sec + 4) / 5;
-        dc.setColor(ARC_COLORS[nextTick % 3] as Number, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(nextColor, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, cy, _font, formatTime(clock),
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
@@ -138,9 +141,10 @@ class _15secView extends WatchUi.View {
         return w / 2 - arcThickness(w) / 2 - (w * 0.015).toNumber();
     }
 
-    // The seconds dots run on a circle just inside the arcs.
+    // The seconds dots run on a circle just inside the arcs, far enough in
+    // that the big next-tick dot keeps a clear gap from them.
     private function dotRingRadius(w as Number) as Number {
-        return arcRadius(w) - arcThickness(w) / 2 - (w * 0.04).toNumber();
+        return arcRadius(w) - arcThickness(w) / 2 - (w * 0.055).toNumber();
     }
 
     // Draws a dot on a circle at a watch angle (0 = 12 o'clock, clockwise).
