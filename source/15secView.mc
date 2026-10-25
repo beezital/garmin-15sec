@@ -121,7 +121,10 @@ class _15secView extends WatchUi.View {
             drawRingDot(dc, cx, cy, ring, clock.sec * DEG_PER_SEC - i * TRAIL_STEP, w * (HAND_SIZES[i] as Float));
         }
 
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        // The time takes the color of the tick the hand is heading to, i.e. the
+        // arc that completes next and starts a new cycle right after.
+        var nextTick = (clock.sec + 4) / 5;
+        dc.setColor(ARC_COLORS[nextTick % 3] as Number, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, cy, _font, formatTime(clock),
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
